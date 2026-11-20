@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Тест после зала</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#fff1d6;--ink:#2b1a14;--wine:#8e1f3a;--card:#ffffff;--soft:#f1e3cc;--r:16px}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);
+    font-family:'Rubik',system-ui,sans-serif;color:var(--ink);text-align:center;overflow-x:hidden;padding:12px}
+  #app{background:var(--card);border:3px solid var(--ink);border-radius:var(--r);padding:22px 18px;width:min(100%,440px);position:relative;z-index:2}
+  h1{font-size:22px;line-height:1.2;margin:0 0 12px;font-weight:800;text-wrap:balance}
+  h1.big{font-size:28px}
+  p{margin:8px 0;text-wrap:pretty}
+  .label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--wine);margin-bottom:6px}
+  img.g{max-width:100%;border-radius:var(--r);display:block;margin:0 auto 10px}
+  .row{display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:10px}
+  .row img{width:48%;border-radius:var(--r);border:2px solid var(--ink);background:#fff}
+  .btn{display:block;width:100%;margin:8px 0;padding:13px;font:inherit;font-size:17px;font-weight:700;border:2px solid var(--ink);
+    border-radius:var(--r);background:var(--wine);color:#fff;cursor:pointer;transition:transform .12s,background .12s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn:active{transform:scale(.97)}
+  .btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .btn.alt{background:var(--soft);color:var(--ink)}
+  .btn.opt{background:var(--card);color:var(--ink)}
+  .btn.opt:hover{background:var(--soft)}
+  .btn.nope{background:var(--soft);color:#8a7466;text-decoration:line-through;cursor:not-allowed;transform:none;border-style:dashed}
+  .btn.picked{background:var(--wine);color:#fff;text-decoration:none}
+  .btn:disabled{cursor:default}
+  #react{min-height:44px;margin-top:10px;font-weight:700;color:var(--wine)}
+  .bar{height:16px;background:var(--soft);border:2px solid var(--ink);border-radius:10px;overflow:hidden;margin:14px 0}
+  .bar div{height:100%;width:0;background:var(--wine);transition:width .4s}
+  .fall{position:fixed;top:-40px;font-size:28px;animation:f linear forwards;z-index:1;pointer-events:none}
+  @keyframes f{to{transform:translateY(110vh) rotate(360deg)}}
+  .shake{animation:s .4s}
+  @keyframes s{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  .pop{animation:p .35s}
+  @keyframes p{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .meter{font-size:13px;color:#6b4a3a;font-weight:500}
+  input[type=range]{width:100%;accent-color:var(--wine)}
+  @media (prefers-reduced-motion:reduce){.fall,.pop,.shake{animation:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const NAME = "Даня";
+const IMG = {
+  feed:  "https://cdn.abacus.ai/images/d997cead-903c-478e-add4-672aae76b9b0.png",
+  uncle: "https://cdn.abacus.ai/images/f539bc70-9e7e-4307-849b-feab98aa4f6c.png",
+  cat:   "https://cdn.abacus.ai/images/811fe815-3189-4379-bd78-b2a74aa0c169.png"
+};
+const app = document.getElementById('app');
+
+// ok:true — единственный вариант, который пускает дальше
+const steps = [
+  {q:"Что бы ты хотел на ужин?", opts:[
+    {t:"🥟 Хинкали", ok:true, r:"Правильный выбор! Организм не обманешь 🔥"},
+    {t:"🧀 Хачапури", r:"Хороший вкус, но сегодня не твой день. Выбирай ещё раз 😏"},
+    {t:"🍢 Люля", r:"Люля обиделись, что их не взяли. Но нет 🙅"},
+    {t:"🥟 Пельмени", r:"Это хинкали без характера. Не засчитано"},
+    {t:"🍣 Суши-роллы", r:"Рис с рыбой? Система не согласна 🤨"},
+    {t:"🍕 Пицца", r:"Пицца — это хачапури, которое предало родину"},
+    {t:"🍔 Бургер", r:"Хинкали обиделись 😢 Попробуй ещё"},
+    {t:"🥗 Я на диете", run:true}]},
+  {q:"Что будешь пить?", opts:[
+    {t:"🍷 Вино", ok:true, r:"Грузинское, конечно. Тост за тебя 🍷"},
+    {t:"🍵 Чай", r:"Чай после зала? Смело, но нет ☕"},
+    {t:"🍺 Пиво", r:"Пиво к хинкали — классика, но не сегодня 🍻"},
+    {t:"💧 Только воду", r:"Вода закончилась. Бабушка выпила 👵"}]},
+  {q:"Как ты себя чувствуешь после зала?", slider:true}
+];
+let i = 0;
+
+function intro(){
+  app.innerHTML = `<div class="pop">
+  <div class="label">Мини-тест после тренировки</div>
+  <h1>Привет, ${NAME}! У меня к тебе три вопроса</h1>
+  <div class="row"><img src="${IMG.feed}" alt="голодный белый кот у пустой миски"><img src="${IMG.cat}" alt="голодный серый кот"></div>
+  <p><b>Так выглядят голодные люди после тренировки</b></p>
+  <p class="meter">Отвечай честно: организм всё равно знает правду</p>
+  <button class="btn" onclick="show()">Поехали</button></div>`;
+}
+
+function show(){
+  if(i>=steps.length) return load();
+  const s = steps[i];
+  let h = `<div class="pop"><div class="label">Вопрос ${i+1} из ${steps.length}</div><h1>${s.q}</h1>`;
+  if(s.slider){
+    h += `<input type="range" id="r" min="0" max="100" value="50" aria-label="усталость">
+    <p class="meter">норм ← → умираю</p>
+    <button class="btn" onclick="finishSlider(this)">Готово</button>`;
+  } else {
+    s.opts.forEach((o,idx)=>{
+      h += o.run
+        ? `<button class="btn alt run">${o.t}</button>`
+        : `<button class="btn opt" data-i="${idx}">${o.t}</button>`;
+    });
+  }
+  app.innerHTML = h + `<div id="react"></div></div>`;
+  app.querySelectorAll('.btn.opt').forEach(b=>b.addEventListener('click',()=>pick(b)));
+  const run = app.querySelector('.run');
+  if(run){
+    const flee = e=>{
+      e.preventDefault();
+      run.style.position='fixed';
+      run.style.width='170px';
+      run.style.zIndex=5;
+      run.style.left=Math.max(8,Math.random()*(innerWidth-190))+'px';
+      run.style.top=Math.max(8,Math.random()*(innerHeight-60))+'px';
+      document.getElementById('react').textContent='Куда пошёл? Диета отменяется 😈';
+      shake();
+    };
+    run.addEventListener('mouseover',flee);
+    run.addEventListener('touchstart',flee,{passive:false});
+    run.addEventListener('click',flee);
+  }
+}
+
+function shake(){app.classList.add('shake');setTimeout(()=>app.classList.remove('shake'),400);}
+
+function pick(btn){
+  const o = steps[i].opts[btn.dataset.i];
+  const out = document.getElementById('react');
+  out.textContent = o.r;
+  if(o.ok){
+    app.querySelectorAll('.btn').forEach(b=>b.disabled=true);
+    btn.classList.add('picked');
+    i++; setTimeout(show,1600);
+  } else {
+    btn.classList.add('nope');
+    btn.disabled = true;
+    shake();
+  }
+}
+
+function finishSlider(btn){
+  document.getElementById('react').textContent='Что бы ты ни выбрал: тебе срочно нужны хинкали 🥟';
+  btn.disabled=true; i++; setTimeout(show,1900);
+}
+
+function load(){
+  const msgs=["Анализируем ответы…","Считаем белки…","Консультируемся с грузинской бабушкой 👵…","Почти готово…"];
+  app.innerHTML = `<div class="pop"><h1>Обработка результатов</h1><img class="g" src="${IMG.cat}" style="width:55%" alt="голодный кот ждёт результат">
+  <div class="bar"><div id="p"></div></div><p id="m" class="meter"></p></div>`;
+  let p=0,k=0;
+  const t=setInterval(()=>{
+    p=Math.min(p+Math.random()*12,99);
+    document.getElementById('p').style.width=p+'%';
+    document.getElementById('m').textContent=msgs[Math.min(k++,3)]+' '+Math.floor(p)+'%';
+    if(p>=99){
+      clearInterval(t);
+      document.getElementById('m').textContent='99%… завис. Бабушка думает 🤔';
+      setTimeout(finale,2500);
+    }
+  },500);
+}
+
+function finale(){
+  app.innerHTML = `<div class="pop"><div class="label">Результат теста</div>
+  <img class="g" src="${IMG.uncle}" style="width:60%" alt="усатый дядя приглашает к столу">
+  <h1 class="big">${NAME}, хинкали и вино! Идём сегодня после зала 🥟🍷</h1>
+  <p>«Брат, я уже поставил воду» — грузин.<br>Столик на двоих забронирован 😌</p>
+  <button class="btn" onclick="yes()">Да, конечно ❤️</button>
+  <button class="btn alt" id="no">Подумаю</button></div>`;
+  confetti();
+  const no=document.getElementById('no');
+  let sc=1;
+  const dodge=e=>{e.preventDefault();sc*=.7;no.style.transform=`scale(${sc})`;
+    if(sc<.15) no.style.display='none';};
+  no.addEventListener('mouseover',dodge);
+  no.addEventListener('touchstart',dodge,{passive:false});
+  no.addEventListener('click',dodge);
+}
+
+function yes(){
+  confetti();
+  app.innerHTML=`<div class="pop"><h1 class="big">Ураа! 🎉</h1>
+  <img class="g" src="${IMG.feed}" style="width:60%" alt="счастливый кот">
+  <p style="font-size:20px;font-weight:700">Тогда встречаемся после зала. Я уже хочу хинкали 🥟❤️</p></div>`;
+}
+
+function confetti(){
+  for(let n=0;n<60;n++){
+    const e=document.createElement('div');e.className='fall';
+    e.textContent=['🥟','🎉','🍷','🧀','❤️'][n%5];
+    e.style.left=Math.random()*100+'vw';
+    e.style.animationDuration=(2+Math.random()*3)+'s';
+    document.body.appendChild(e);setTimeout(()=>e.remove(),5500);
+  }
+}
+intro();
+</script>
+</body>
+</html>
