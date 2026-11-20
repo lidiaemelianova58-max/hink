@@ -19,10 +19,10 @@
   .btn:active{transform:scale(.96)}
   .btn.alt{background:#eee;color:#333}
   .btn.bad{text-decoration:line-through;opacity:.5}
-  #react{min-height:28px;margin-top:10px;font-weight:600;color:#c0392b}
+  #react{position:sticky;top:0;z-index:3;min-height:28px;padding:8px;background:#fff;font-weight:600;color:#c0392b}
   .bar{height:14px;background:#eee;border-radius:9px;overflow:hidden;margin:16px 0}
   .bar div{height:100%;width:0;background:#ff6b6b;transition:width 1.5s}
-  .fall{position:fixed;top:-40px;font-size:28px;animation:f linear forwards;z-index:1;pointer-events:none}
+  .fall{position:fixed;top:-40px;font-size:28px;animation:f linear forwards;z-index:10;pointer-events:none}
   @keyframes f{to{transform:translateY(110vh) rotate(360deg)}}
   .shake{animation:s .4s}
   @keyframes s{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
@@ -55,7 +55,7 @@ const steps = [
     {t:"🍵 Чай", r:"Чай после зала? Смело, но нет ☕"},
     {t:"🍺 Пиво", r:"Пиво к хинкали — классика, но сегодня не оно 🍻"},
     {t:"🍷 Вино", r:"Грузинское, конечно 🍷", ok:true},
-    {t:"💧 Только воду", r:"Вода закончилась. Бабушка выпила. Берём вино 🍷", ok:true}
+    {t:"💧 Только воду", r:"Вода закончилась. Бабушка выпила. Выбирай вино 🍷"}
   ]},
   {q:"Как ты себя чувствуешь после зала?", slider:true}
 ];
@@ -75,7 +75,8 @@ function say(text){ document.getElementById('react').textContent = text; }
 function show(){
   if(i >= steps.length) return load();
   const s = steps[i];
-  app.innerHTML = `<h1>${s.q}</h1><div id="opts"></div><div id="react"></div>`;
+  app.innerHTML = `<h1>${s.q}</h1><div id="react" role="status" aria-live="polite"></div><div id="opts"></div>`;
+  app.scrollTop = 0;
   const box = document.getElementById('opts');
 
   if(s.slider){
