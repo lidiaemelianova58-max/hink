@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Хинкали-квиз</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#ffe3e3,#fff3c4);font-family:system-ui,sans-serif;text-align:center;overflow:hidden}
+  #app{background:#fff;border-radius:24px;padding:24px 18px;width:min(92vw,420px);max-height:96vh;overflow:auto;
+    box-shadow:0 10px 40px #0002;position:relative;z-index:2}
+  h1{font-size:22px;margin:0 0 12px}
+  img.g{max-width:100%;border-radius:12px}
+  .row{display:flex;gap:8px;justify-content:center;align-items:center}
+  .row img{width:48%;border-radius:12px}
+  .small{font-size:13px;color:#777}
+  .btn{display:block;width:100%;margin:8px 0;padding:14px;font-size:18px;border:0;border-radius:14px;
+    background:#ff6b6b;color:#fff;cursor:pointer;transition:transform .15s,opacity .4s}
+  .btn:active{transform:scale(.96)}
+  .btn.alt{background:#eee;color:#333}
+  .btn.bad{text-decoration:line-through;opacity:.5}
+  #react{min-height:28px;margin-top:10px;font-weight:600;color:#c0392b}
+  .bar{height:14px;background:#eee;border-radius:9px;overflow:hidden;margin:16px 0}
+  .bar div{height:100%;width:0;background:#ff6b6b;transition:width 1.5s}
+  .fall{position:fixed;top:-40px;font-size:28px;animation:f linear forwards;z-index:1;pointer-events:none}
+  @keyframes f{to{transform:translateY(110vh) rotate(360deg)}}
+  .shake{animation:s .4s}
+  @keyframes s{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const NAME = "Даня";
+const IMG = {
+  feed: "feed-me.gif",
+  cat: "cat-hungry-cat.gif",
+  mustache: "1531493231_18068121.gif"
+};
+const app = document.getElementById('app');
+
+// ok:true — можно идти дальше, ok:false — не пускает
+const steps = [
+  {q:"Что бы ты хотел на ужин?", opts:[
+    {t:"🥟 Хинкали", r:"Правильный выбор! 🔥", ok:true},
+    {t:"🧀 Хачапури", r:"Хорошая попытка, но сегодня не твой день 😏"},
+    {t:"🍢 Люля", r:"Люля обиделась и ушла 🚶"},
+    {t:"🥟 Пельмени", r:"Это хинкали без характера. Нет 🙅"},
+    {t:"🍣 Суши-роллы", r:"Рис с рыбой? Система не согласна 🤨"},
+    {t:"🍕 Пицца", r:"Пицца — это хачапури, которое предало родину"},
+    {t:"🍔 Бургер", r:"Хинкали обиделись 😢"},
+    {t:"🥗 Я на диете", run:true}
+  ]},
+  {q:"Что будешь пить?", opts:[
+    {t:"🍵 Чай", r:"Чай после зала? Смело, но нет ☕"},
+    {t:"🍺 Пиво", r:"Пиво к хинкали — классика, но сегодня не оно 🍻"},
+    {t:"🍷 Вино", r:"Грузинское, конечно 🍷", ok:true},
+    {t:"💧 Только воду", r:"Вода закончилась. Бабушка выпила. Берём вино 🍷", ok:true}
+  ]},
+  {q:"Как ты себя чувствуешь после зала?", slider:true}
+];
+let i = 0;
+
+function intro(){
+  app.innerHTML = `<h1>Привет, ${NAME}! У меня к тебе три вопроса</h1>
+  <div class="row"><img src="${IMG.feed}"><img src="${IMG.cat}"></div>
+  <p><b>Так выглядят голодные люди после тренировки</b></p>
+  <p class="small">Отвечай честно: организм всё равно знает правду</p>
+  <button class="btn" id="go">Поехали</button>`;
+  document.getElementById('go').onclick = show;
+}
+
+function say(text){ document.getElementById('react').textContent = text; }
+
+function show(){
+  if(i >= steps.length) return load();
+  const s = steps[i];
+  app.innerHTML = `<h1>${s.q}</h1><div id="opts"></div><div id="react"></div>`;
+  const box = document.getElementById('opts');
+
+  if(s.slider){
+    box.innerHTML = `<input type="range" min="0" max="100" value="50" style="width:100%">
+      <p class="small">норм ←→ умираю</p>`;
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = 'Готово';
+    b.onclick = () => { say('Что бы ты ни выбрал: тебе срочно нужны калории 🍽'); setTimeout(()=>{i++; show();}, 1500); };
+    box.appendChild(b);
+    return;
+  }
+
+  s.opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'btn' + (o.run ? ' alt' : '');
+    b.textContent = o.t;
+    if(o.run){
+      const flee = e => {
+        e.preventDefault();
+        b.style.position = 'fixed';
+        b.style.width = '160px';
+        b.style.zIndex = 5;
+        b.style.left = Math.random()*(innerWidth-180)+'px';
+        b.style.top = Math.random()*(innerHeight-60)+'px';
+      };
+      b.addEventListener('mouseover', flee);
+      b.addEventListener('touchstart', flee, {passive:false});
+      b.addEventListener('click', flee);
+    } else {
+      b.onclick = () => {
+        say(o.r);
+        if(o.ok){
+          Array.from(box.children).forEach(x => x.disabled = true);
+          setTimeout(()=>{i++; show();}, 1500);
+        } else {
+          b.classList.add('bad');
+          app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake');
+        }
+      };
+    }
+    box.appendChild(b);
+  });
+}
+
+function load(){
+  app.innerHTML = `<h1>Считаем результат…</h1>
+  <img class="g" src="${IMG.cat}">
+  <div class="bar"><div id="fill"></div></div>
+  <p id="lt" class="small">Анализируем ответы…</p>`;
+  const f = document.getElementById('fill'), t = document.getElementById('lt');
+  setTimeout(()=>{ f.style.width = '99%'; }, 100);
+  setTimeout(()=>{ t.textContent = 'Зависло на 99%. Бабушка думает 👵'; }, 1800);
+  setTimeout(final, 4500);
+}
+
+function final(){
+  app.innerHTML = `<img class="g" src="${IMG.mustache}">
+  <h1>Брат, я уже поставил воду!</h1>
+  <p><b>${NAME}, хинкали и вино! Идём сегодня после зала?</b></p>
+  <button class="btn" id="yes">Да, конечно</button>
+  <button class="btn alt" id="no">Подумаю</button>`;
+  confetti();
+  document.getElementById('yes').onclick = win;
+  const no = document.getElementById('no');
+  let scale = 1;
+  no.onclick = () => {
+    scale -= 0.35;
+    if(scale <= 0.05){ no.style.display = 'none'; return; }
+    no.style.transform = `scale(${scale})`;
+  };
+}
+
+function win(){
+  app.innerHTML = `<img class="g" src="${IMG.mustache}">
+  <h1>Ура! Встречаемся после зала 🥟🍷</h1>
+  <p>${NAME}, я уже хочу хинкали!</p>`;
+  confetti();
+}
+
+function confetti(){
+  const em = ['🥟','🍷','🎉','❤️','😻'];
+  for(let k=0;k<30;k++){
+    const d = document.createElement('div');
+    d.className = 'fall';
+    d.textContent = em[Math.floor(Math.random()*em.length)];
+    d.style.left = Math.random()*100+'vw';
+    d.style.animationDuration = (2+Math.random()*3)+'s';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 5500);
+  }
+}
+
+intro();
+</script>
+</body>
+</html>
